@@ -2,11 +2,10 @@ package compiler
 
 import (
 	"context"
-	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 
+	"github.com/paralin/typescript-go/ts2go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -15,9 +14,6 @@ import (
 type Config struct {
 	// OutputPath is the directory where the generated Go files will be written.
 	OutputPath string
-	// ParserScript is the path to the TypeScript parser script.
-	// Defaults to "parser.js" in the project root.
-	ParserScript string
 }
 
 // Compiler is the main TypeScript to Go compiler.
@@ -30,10 +26,6 @@ type Compiler struct {
 func NewCompiler(conf *Config, logger logrus.FieldLogger) (*Compiler, error) {
 	if conf.OutputPath == "" {
 		return nil, errors.New("output path is required")
-	}
-
-	if conf.ParserScript == "" {
-		conf.ParserScript = "parser.js"
 	}
 
 	if logger == nil {
@@ -50,14 +42,17 @@ func NewCompiler(conf *Config, logger logrus.FieldLogger) (*Compiler, error) {
 func (c *Compiler) CompileFile(ctx context.Context, inputPath string) error {
 	c.logger.Infof("compiling TypeScript file: %s", inputPath)
 
-	// Parse the TypeScript file
-	ast, err := c.parseTypeScript(ctx, inputPath)
+	// Read the TypeScript source file
+	sourceText, err := os.ReadFile(inputPath)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse TypeScript")
+		return errors.Wrap(err, "failed to read input file")
 	}
 
+	// Parse the TypeScript file using typescript-go
+	sourceFile := ts2go.ParseSourceFile(inputPath, string(sourceText))
+
 	// Generate Go code from the AST
-	goCode, err := c.generateGoCode(ast)
+	goCode, err := c.generateGoCode(sourceFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Go code")
 	}
@@ -74,22 +69,6 @@ func (c *Compiler) CompileFile(ctx context.Context, inputPath string) error {
 
 	c.logger.Infof("generated Go file: %s", outputPath)
 	return nil
-}
-
-// parseTypeScript parses a TypeScript file using the Node.js parser script.
-func (c *Compiler) parseTypeScript(ctx context.Context, inputPath string) (*ASTNode, error) {
-	cmd := exec.CommandContext(ctx, "node", c.conf.ParserScript, inputPath)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse TypeScript file: %s", string(output))
-	}
-
-	var ast ASTNode
-	if err := json.Unmarshal(output, &ast); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal AST")
-	}
-
-	return &ast, nil
 }
 
 // getOutputPath determines the output file path for a given input file.
