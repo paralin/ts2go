@@ -1,0 +1,22 @@
+{
+  "name": "ts2go",
+  "version": "0.1.0",
+  "description": "TypeScript to Go transpiler",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No npm tests yet\""
+  },
+  "keywords": [
+    "typescript",
+    "go",
+    "transpiler",
+    "compiler"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  }
+}

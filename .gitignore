@@ -1,0 +1,13 @@
+.#*
+node_modules
+*.swp
+.DS_Store
+vendor
+dist
+buildtarget
+.idea
+output
+out
+.claude
+.tmp
+tests/tests/__screenshots__
